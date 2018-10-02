@@ -265,8 +265,7 @@ public class KMeansRunner
 					centroidTypeName,
 					scaledRange);
 
-			if (isGenerateHulls()) 
-			{
+			if (isGenerateHulls()) {
 				LOGGER.warn("Outputting cluster hulls...");
 				KMeansUtils.writeClusterHulls(
 						centroidVectors,

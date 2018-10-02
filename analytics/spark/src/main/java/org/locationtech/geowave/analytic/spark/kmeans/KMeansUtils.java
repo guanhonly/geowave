@@ -162,7 +162,7 @@ public class KMeansUtils
 			final DataStorePluginOptions outputDataStore,
 			final String hullAdapterName,
 			final boolean computeMetadata ) {
-		
+
 		LOGGER.warn("Kmeans hull generation: grouping by index");
 		final JavaPairRDD<Integer, Iterable<Vector>> groupByRdd = KMeansHullGenerator.groupByIndex(
 				inputCentroids,
@@ -283,8 +283,10 @@ public class KMeansUtils
 				LOGGER.warn("building simple feature for hull...");
 				final SimpleFeature sf = sfBuilder.buildFeature("Hull-" + index);
 
-				LOGGER.warn("writing the hull feature...");
-				writer.write(sf);
+				LOGGER.warn("writing hull feature: " + sf.toString());
+				writer.write(
+						sf,
+						true);
 				LOGGER.warn("feature write complete...");
 			}
 			LOGGER.warn("all hulls written...");

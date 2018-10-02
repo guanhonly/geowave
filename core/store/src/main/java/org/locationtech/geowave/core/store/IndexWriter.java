@@ -33,6 +33,10 @@ public interface IndexWriter<T> extends
 
 	public InsertionIds write(
 			final T entry,
+			boolean log );
+
+	public InsertionIds write(
+			final T entry,
 			final VisibilityWriter<T> fieldVisibilityWriter );
 
 	public PrimaryIndex[] getIndices();

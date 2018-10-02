@@ -48,6 +48,7 @@ import org.locationtech.geowave.test.spark.GeoWaveSparkSpatialJoinIT;
 
 @RunWith(GeoWaveITSuiteRunner.class)
 @SuiteClasses({
+	GeoWaveGrpcIT.class,
 	GeoWaveVisibilityIT.class,
 	GeowaveCustomCRSSpatialVectorIT.class,
 	GeoWaveBasicSpatialTemporalVectorIT.class,
@@ -76,7 +77,6 @@ import org.locationtech.geowave.test.spark.GeoWaveSparkSpatialJoinIT;
 	ConfigServicesIT.class,
 	GeoServerIngestIT.class,
 	GeoServerIT.class,
-	GeoWaveGrpcIT.class,
 	RemoteIT.class,
 	IngestIT.class,
 	FileUploadIT.class,

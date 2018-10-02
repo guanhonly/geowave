@@ -104,6 +104,55 @@ class BaseIndexWriter<T> implements
 	}
 
 	@Override
+	public InsertionIds write(
+			final T entry,
+			boolean log ) {
+		return write(
+				entry,
+				DataStoreUtils.UNCONSTRAINED_VISIBILITY,
+				log);
+	}
+
+	public InsertionIds write(
+			final T entry,
+			final VisibilityWriter<T> fieldVisibilityWriter,
+			boolean log ) {
+		IntermediaryWriteEntryInfo entryInfo;
+		LOGGER.warn("entering synchronized write block...");
+		synchronized (this) {
+			ensureOpen();
+
+			if (writer == null) {
+				LOGGER.error("Null writer - empty list returned");
+				return new InsertionIds();
+			}
+			LOGGER.warn("getting write info...");
+			entryInfo = BaseDataStoreUtils.getWriteInfo(
+					entry,
+					adapter,
+					index,
+					fieldVisibilityWriter);
+			LOGGER.warn("verifying visibility: " + entryInfo);
+			verifyVisibility(
+					fieldVisibilityWriter,
+					entryInfo);
+
+			LOGGER.warn("getting rows from info... ");
+			final GeoWaveRow[] rows = entryInfo.getRows();
+
+			LOGGER.warn("writing the row...");
+			writer.write(rows);
+
+			LOGGER.warn("calling callback");
+			callback.entryIngested(
+					entry,
+					rows);
+			LOGGER.warn("callback succeeded");
+		}
+		return entryInfo.getInsertionIds();
+	}
+
+	@Override
 	public void close() {
 		try {
 			closable.close();

@@ -53,6 +53,21 @@ public class IndexCompositeWriter<T> implements
 				ids);
 	}
 
+	public InsertionIds write(
+			final T entry,
+			boolean log ) {
+		final List<SinglePartitionInsertionIds> ids = new ArrayList<SinglePartitionInsertionIds>();
+
+		for (final IndexWriter<T> indexWriter : writers) {
+			final InsertionIds i = indexWriter.write(
+					entry,
+					true);
+			ids.addAll(i.getPartitionKeys());
+		}
+		return new InsertionIds(
+				ids);
+	}
+
 	@Override
 	public InsertionIds write(
 			final T entry,

@@ -44,6 +44,15 @@ public class IndependentAdapterIndexWriter<T> implements
 	@Override
 	public InsertionIds write(
 			final T entry,
+			boolean log ) {
+		final List<SinglePartitionInsertionIds> ids = new ArrayList<SinglePartitionInsertionIds>();
+		return new InsertionIds(
+				ids);
+	}
+
+	@Override
+	public InsertionIds write(
+			final T entry,
 			final VisibilityWriter<T> feldVisibilityWriter ) {
 		final Iterator<T> indexedEntries = adapter.convertToIndex(
 				index,
