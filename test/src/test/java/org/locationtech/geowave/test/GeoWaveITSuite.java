@@ -48,8 +48,39 @@ import org.locationtech.geowave.test.spark.GeoWaveSparkSpatialJoinIT;
 
 @RunWith(GeoWaveITSuiteRunner.class)
 @SuiteClasses({
-	GeoWaveGrpcIT.class
-	
+	GeoWaveVisibilityIT.class,
+	GeowaveCustomCRSSpatialVectorIT.class,
+	GeoWaveBasicSpatialTemporalVectorIT.class,
+	// TODO need to mock up S3
+	// GeowaveBasicURLIngestIT.class,
+	GeoWaveVectorSerializationIT.class,
+	BasicKafkaIT.class,
+	BasicMapReduceIT.class,
+	// for now tests are taking too long in travis and landsatIT is a long test
+	// LandsatIT.class,
+	CustomCRSLandsatIT.class,
+	GeoWaveBasicRasterIT.class,
+	GeoWaveBasicCustomCRSRasterIT.class,
+	CustomCRSKDERasterResizeIT.class,
+	BulkIngestInputGenerationIT.class,
+	GeoWaveNNIT.class,
+	AttributesSubsetQueryIT.class,
+	SpatialTemporalQueryIT.class,
+	PolygonDataIdQueryIT.class,
+	ConfigCacheIT.class,
+	DBScanIT.class,
+	GeoWaveJavaSparkIT.class,
+	GeoWaveJavaSparkKMeansIT.class,
+	GeoWaveJavaSparkSQLIT.class,
+	GeoWaveSparkSpatialJoinIT.class,
+	ConfigServicesIT.class,
+	GeoServerIngestIT.class,
+	GeoServerIT.class,
+	GeoWaveGrpcIT.class,
+	RemoteIT.class,
+	IngestIT.class,
+	FileUploadIT.class,
+	SplitsProviderIT.class
 })
 public class GeoWaveITSuite
 {
