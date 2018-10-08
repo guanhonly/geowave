@@ -212,8 +212,9 @@ public class StatsCompositionTool<T> implements
 		LOGGER.warn("entering stats builder mutex...");
 		synchronized (MUTEX) {
 			for (final DataStatisticsBuilder<T> builder : statisticsBuilders) {
-				LOGGER.warn("building stat: " + builder.getClass().getSimpleName());
+				LOGGER.warn("building stat: " + builder.getStatId().toString());
 				builder.entryIngested(
+						log,
 						entry,
 						kvs);
 				LOGGER.warn("stat built: " + builder.getClass().getSimpleName());

@@ -23,12 +23,16 @@ import org.locationtech.geowave.core.store.callback.IngestCallback;
 import org.locationtech.geowave.core.store.callback.ScanCallback;
 import org.locationtech.geowave.core.store.entities.GeoWaveRow;
 import org.locationtech.geowave.core.store.index.PrimaryIndex;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class DataStatisticsBuilder<T> implements
 		IngestCallback<T>,
 		DeleteCallback<T, GeoWaveRow>,
 		ScanCallback<T, GeoWaveRow>
 {
+
+	private final static Logger LOGGER = LoggerFactory.getLogger(DataStatisticsBuilder.class);
 	private final DataStoreStatisticsProvider<T> statisticsProvider;
 	private final Map<ByteArrayId, DataStatistics<T>> statisticsMap = new HashMap<ByteArrayId, DataStatistics<T>>();
 	private final ByteArrayId statisticsId;
@@ -76,24 +80,37 @@ public class DataStatisticsBuilder<T> implements
 			boolean log,
 			final T entry,
 			final GeoWaveRow... kvs ) {
+		LOGGER.warn("Getting stat visibility");
 		final ByteArrayId visibility = new ByteArrayId(
 				visibilityHandler.getVisibility(
 						entry,
 						kvs));
+		LOGGER.warn("Getting stats based on visibility");
 		DataStatistics<T> statistics = statisticsMap.get(visibility);
 		if (statistics == null) {
+			LOGGER.warn("stats are null creating the stat");
 			statistics = statisticsProvider.createDataStatistics(statisticsId);
 			if (statistics == null) {
+				LOGGER.warn("stats still null");
 				return;
 			}
+			LOGGER.warn("setting visibility");
 			statistics.setVisibility(visibility.getBytes());
+
+			LOGGER.warn("adding stat based on visibility");
 			statisticsMap.put(
 					visibility,
 					statistics);
 		}
+		LOGGER.warn("calling entry ingest for stat");
 		statistics.entryIngested(
 				entry,
 				kvs);
+		LOGGER.warn("entry ingest for complete");
+	}
+
+	public ByteArrayId getStatId() {
+		return this.statisticsId;
 	}
 
 	public Collection<DataStatistics<T>> getStatistics() {
