@@ -144,7 +144,7 @@ class BaseIndexWriter<T> implements
 			writer.write(rows);
 
 			LOGGER.warn("calling callback");
-			callback.entryIngested(
+			callback.entryIngested(true,
 					entry,
 					rows);
 			LOGGER.warn("callback succeeded");
