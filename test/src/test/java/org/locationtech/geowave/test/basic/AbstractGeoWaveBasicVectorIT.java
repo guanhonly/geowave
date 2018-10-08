@@ -787,5 +787,32 @@ abstract public class AbstractGeoWaveBasicVectorIT extends
 						geometry.getEnvelopeInternal().getMaxY());
 			}
 		}
+
+		@Override
+		public void entryIngested(
+				boolean log,
+				final SimpleFeature entry,
+				final GeoWaveRow... geowaveRows ) {
+			for (final DataStatistics<SimpleFeature> stats : statsCache.values()) {
+				stats.entryIngested(
+						entry,
+						geowaveRows);
+			}
+			final Geometry geometry = ((Geometry) entry.getDefaultGeometry());
+			if ((geometry != null) && !geometry.isEmpty()) {
+				minX = Math.min(
+						minX,
+						geometry.getEnvelopeInternal().getMinX());
+				minY = Math.min(
+						minY,
+						geometry.getEnvelopeInternal().getMinY());
+				maxX = Math.max(
+						maxX,
+						geometry.getEnvelopeInternal().getMaxX());
+				maxY = Math.max(
+						maxY,
+						geometry.getEnvelopeInternal().getMaxY());
+			}
+		}
 	}
 }

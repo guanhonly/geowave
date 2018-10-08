@@ -133,6 +133,27 @@ public class FeatureFixedBinNumericStatistics extends
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final SimpleFeature entry,
+			final GeoWaveRow... rows ) {
+		final Object o = entry.getAttribute(getFieldName());
+		if (o == null) {
+			return;
+		}
+		if (o instanceof Date) {
+			add(
+					1,
+					((Date) o).getTime());
+		}
+		else if (o instanceof Number) {
+			add(
+					1,
+					((Number) o).doubleValue());
+		}
+	}
+
+	@Override
 	public String getFieldIdentifier() {
 		return getFieldName();
 	}

@@ -168,6 +168,18 @@ public class FeatureHyperLogLogStatistics extends
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final SimpleFeature entry,
+			final GeoWaveRow... rows ) {
+		final Object o = entry.getAttribute(getFieldName());
+		if (o == null) {
+			return;
+		}
+		loglog.offer(o.toString());
+	}
+
+	@Override
 	public String toString() {
 		final StringBuffer buffer = new StringBuffer();
 		buffer.append(

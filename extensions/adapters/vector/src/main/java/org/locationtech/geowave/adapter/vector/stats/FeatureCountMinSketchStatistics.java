@@ -161,6 +161,20 @@ public class FeatureCountMinSketchStatistics extends
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final SimpleFeature entry,
+			final GeoWaveRow... rows ) {
+		final Object o = entry.getAttribute(getFieldName());
+		if (o == null) {
+			return;
+		}
+		sketch.add(
+				o.toString(),
+				1);
+	}
+
+	@Override
 	public String toString() {
 		final StringBuffer buffer = new StringBuffer();
 		buffer.append(

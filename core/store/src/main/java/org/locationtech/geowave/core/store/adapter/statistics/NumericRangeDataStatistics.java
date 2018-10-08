@@ -90,6 +90,22 @@ abstract public class NumericRangeDataStatistics<T> extends
 		}
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		final NumericRange range = getRange(entry);
+		if (range != null) {
+			min = Math.min(
+					min,
+					range.getMin());
+			max = Math.max(
+					max,
+					range.getMax());
+		}
+	}
+
 	abstract protected NumericRange getRange(
 			final T entry );
 

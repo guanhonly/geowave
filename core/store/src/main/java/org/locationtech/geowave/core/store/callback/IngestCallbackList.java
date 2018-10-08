@@ -46,7 +46,8 @@ public class IngestCallbackList<T> implements
 			final T entry,
 			GeoWaveRow... kvs ) {
 		for (final IngestCallback<T> callback : callbacks) {
-			callback.entryIngested(true,
+			callback.entryIngested(
+					true,
 					entry,
 					kvs);
 		}

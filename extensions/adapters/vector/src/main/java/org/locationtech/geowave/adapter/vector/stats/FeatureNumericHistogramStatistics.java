@@ -247,6 +247,23 @@ public class FeatureNumericHistogramStatistics extends
 		}
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final SimpleFeature entry,
+			final GeoWaveRow... rows ) {
+		final Object o = entry.getAttribute(getFieldName());
+		if (o == null) {
+			return;
+		}
+		if (o instanceof Date) {
+			add(((Date) o).getTime());
+		}
+		else if (o instanceof Number) {
+			add(((Number) o).doubleValue());
+		}
+	}
+
 	protected void add(
 			final double num ) {
 		if ((num < minValue) || (num > maxValue) || Double.isNaN(num)) {
