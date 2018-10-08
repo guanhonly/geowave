@@ -101,6 +101,22 @@ public class RowRangeHistogramStatisticsSet<T> extends
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			T entry,
+			GeoWaveRow... rows ) {
+		if (rows != null) {
+			// call entry ingested once per row
+			for (final GeoWaveRow row : rows) {
+				getPartitionStatistic(
+						getPartitionKey(row.getPartitionKey())).entryIngested(
+						entry,
+						row);
+			}
+		}
+	}
+
+	@Override
 	public DataStatistics<T>[] getStatisticsSet() {
 		return histogramPerPartition.values().toArray(
 				new DataStatistics[histogramPerPartition.size()]);

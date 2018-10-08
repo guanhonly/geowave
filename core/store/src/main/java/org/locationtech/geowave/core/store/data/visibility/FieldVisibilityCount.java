@@ -133,6 +133,16 @@ public class FieldVisibilityCount<T> extends
 				kvs);
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		updateEntry(
+				1,
+				kvs);
+	}
+
 	private void updateEntry(
 			final int incrementValue,
 			final GeoWaveRow... kvs ) {

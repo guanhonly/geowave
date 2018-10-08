@@ -135,6 +135,28 @@ abstract public class BoundingBoxDataStatistics<T> extends
 		}
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... rows ) {
+		final Envelope env = getEnvelope(entry);
+		if (env != null) {
+			minX = Math.min(
+					minX,
+					env.getMinX());
+			minY = Math.min(
+					minY,
+					env.getMinY());
+			maxX = Math.max(
+					maxX,
+					env.getMaxX());
+			maxY = Math.max(
+					maxY,
+					env.getMaxY());
+		}
+	}
+
 	public ConstraintSet getConstraints() {
 		// Create a NumericRange object using the x axis
 		final NumericRange rangeLongitude = new NumericRange(

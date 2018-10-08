@@ -205,6 +205,17 @@ public class RowRangeHistogramStatistics<T> extends
 		}
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		for (final GeoWaveRow kv : kvs) {
+			final byte[] idBytes = kv.getSortKey();
+			add(ByteUtils.toDouble(idBytes));
+		}
+	}
+
 	protected void add(
 			final double num ) {
 		histogram.add(num);

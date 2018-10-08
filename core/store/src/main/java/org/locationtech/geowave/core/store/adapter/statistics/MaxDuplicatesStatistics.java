@@ -94,6 +94,18 @@ public class MaxDuplicatesStatistics<T> extends
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		for (final GeoWaveRow kv : kvs) {
+			maxDuplicates = Math.max(
+					maxDuplicates,
+					kv.getNumberOfDuplicates());
+		}
+	}
+
+	@Override
 	public void merge(
 			final Mergeable merge ) {
 		if ((merge != null) && (merge instanceof MaxDuplicatesStatistics)) {

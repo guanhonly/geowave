@@ -41,6 +41,18 @@ public class IngestCallbackList<T> implements
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			GeoWaveRow... kvs ) {
+		for (final IngestCallback<T> callback : callbacks) {
+			callback.entryIngested(
+					entry,
+					kvs);
+		}
+	}
+
+	@Override
 	public void close()
 			throws IOException {
 		for (final IngestCallback<T> callback : callbacks) {

@@ -202,6 +202,17 @@ public class SecondaryIndexDataManager<T> implements
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		entryCallback(
+				entry,
+				false,
+				kvs);
+	}
+
+	@Override
 	public void entryDeleted(
 			final T entry,
 			final GeoWaveRow... kvs ) {

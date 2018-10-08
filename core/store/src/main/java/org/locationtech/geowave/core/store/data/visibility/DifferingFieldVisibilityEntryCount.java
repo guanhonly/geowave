@@ -109,6 +109,21 @@ public class DifferingFieldVisibilityEntryCount<T> extends
 		}
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		for (final GeoWaveRow kv : kvs) {
+			if (entryHasDifferentVisibilities(kv)) {
+				if (ids.add(new ByteArrayId(
+						kvs[0].getDataId()))) {
+					entriesWithDifferingFieldVisibilities++;
+				}
+			}
+		}
+	}
+
 	/**
 	 * This is expensive, but necessary since there may be duplicates
 	 */

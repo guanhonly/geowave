@@ -128,6 +128,19 @@ public class IndexMetaDataSet<T> extends
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		if (!this.metaData.isEmpty()) {
+			final InsertionIds insertionIds = DataStoreUtils.keysToInsertionIds(kvs);
+			for (final IndexMetaData imd : this.metaData) {
+				imd.insertionIdsAdded(insertionIds);
+			}
+		}
+	}
+
+	@Override
 	public void entryDeleted(
 			final T entry,
 			final GeoWaveRow... kvs ) {

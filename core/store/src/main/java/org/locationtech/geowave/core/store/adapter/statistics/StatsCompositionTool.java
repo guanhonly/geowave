@@ -202,6 +202,30 @@ public class StatsCompositionTool<T> implements
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		if (statisticsBuilders == null) {
+			return;
+		}
+		LOGGER.warn("entering stats builder mutex...");
+		synchronized (MUTEX) {
+			for (final DataStatisticsBuilder<T> builder : statisticsBuilders) {
+				LOGGER.warn("building stat: " + builder.getClass().getSimpleName());
+				builder.entryIngested(
+						entry,
+						kvs);
+				LOGGER.warn("stat built: " + builder.getClass().getSimpleName());
+			}
+			updateCount++;
+			LOGGER.warn("checking stats: ");
+			checkStats();
+		}
+		LOGGER.warn("stats updated successfully!");
+	}
+
+	@Override
 	public void close() {
 		flush();
 	}

@@ -93,6 +93,18 @@ public class RasterFootprintStatistics extends
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final GridCoverage entry,
+			final GeoWaveRow... geoWaveRows ) {
+		if (entry instanceof FitToIndexGridCoverage) {
+			footprint = RasterUtils.combineIntoOneGeometry(
+					footprint,
+					((FitToIndexGridCoverage) entry).getFootprintWorldGeometry());
+		}
+	}
+
+	@Override
 	public void merge(
 			final Mergeable statistics ) {
 		if (statistics instanceof RasterFootprintStatistics) {

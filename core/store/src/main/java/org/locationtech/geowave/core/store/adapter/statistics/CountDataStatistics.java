@@ -76,6 +76,17 @@ public class CountDataStatistics<T> extends
 	}
 
 	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		if (!isSet()) {
+			count = 0;
+		}
+		count += 1;
+	}
+
+	@Override
 	public void merge(
 			final Mergeable statistics ) {
 		if (!isSet()) {

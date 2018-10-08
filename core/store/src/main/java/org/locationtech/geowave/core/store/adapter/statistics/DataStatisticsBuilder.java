@@ -71,6 +71,31 @@ public class DataStatisticsBuilder<T> implements
 				kvs);
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		final ByteArrayId visibility = new ByteArrayId(
+				visibilityHandler.getVisibility(
+						entry,
+						kvs));
+		DataStatistics<T> statistics = statisticsMap.get(visibility);
+		if (statistics == null) {
+			statistics = statisticsProvider.createDataStatistics(statisticsId);
+			if (statistics == null) {
+				return;
+			}
+			statistics.setVisibility(visibility.getBytes());
+			statisticsMap.put(
+					visibility,
+					statistics);
+		}
+		statistics.entryIngested(
+				entry,
+				kvs);
+	}
+
 	public Collection<DataStatistics<T>> getStatistics() {
 		return statisticsMap.values();
 	}

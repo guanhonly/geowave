@@ -37,4 +37,9 @@ public interface IngestCallback<T>
 			T entry,
 			GeoWaveRow... rows );
 
+	public void entryIngested(
+			boolean log,
+			T entry,
+			GeoWaveRow... rows );
+
 }

@@ -223,6 +223,59 @@ public class HistogramStatistics extends
 		}
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final GridCoverage entry,
+			final GeoWaveRow... geoWaveRows ) {
+		/*
+		 * Create the operation for the Histogram with a ROI. No subsampling
+		 * should be applied.
+		 */
+		final Geometry footprint;
+		if (entry instanceof FitToIndexGridCoverage) {
+			footprint = ((FitToIndexGridCoverage) entry).getFootprintWorldGeometry();
+			if (footprint == null) {
+				return;
+			}
+		}
+		else {
+			// this is a condition that isn't going to be exercised typically in
+			// any code, but at this point we will assume default CRS
+			footprint = RasterUtils.getFootprint(
+					entry,
+					GeoWaveGTRasterFormat.DEFAULT_CRS);
+		}
+
+		final GridCoverage originalCoverage;
+		Resolution resolution = null;
+		if (entry instanceof FitToIndexGridCoverage) {
+			originalCoverage = ((FitToIndexGridCoverage) entry).getOriginalCoverage();
+			resolution = ((FitToIndexGridCoverage) entry).getResolution();
+		}
+		else {
+			originalCoverage = entry;
+		}
+		if (footprint instanceof GeometryCollection) {
+			final GeometryCollection collection = (GeometryCollection) footprint;
+			for (int g = 0; g < collection.getNumGeometries(); g++) {
+				final Geometry geom = collection.getGeometryN(g);
+				if (geom instanceof Polygon) {
+					mergePoly(
+							originalCoverage,
+							(Polygon) geom,
+							resolution);
+				}
+			}
+		}
+		else if (footprint instanceof Polygon) {
+			mergePoly(
+					originalCoverage,
+					(Polygon) footprint,
+					resolution);
+		}
+	}
+
 	private void mergePoly(
 			final GridCoverage originalCoverage,
 			final Polygon poly,

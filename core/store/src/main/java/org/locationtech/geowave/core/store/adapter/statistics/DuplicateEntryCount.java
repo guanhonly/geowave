@@ -113,6 +113,18 @@ public class DuplicateEntryCount<T> extends
 		}
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		if (kvs.length > 0) {
+			if (entryHasDuplicates(kvs[0])) {
+				entriesWithDuplicates++;
+			}
+		}
+	}
+
 	/**
 	 * This is expensive, but necessary since there may be duplicates
 	 */

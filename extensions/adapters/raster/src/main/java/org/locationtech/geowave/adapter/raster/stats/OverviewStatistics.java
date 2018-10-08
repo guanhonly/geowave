@@ -98,6 +98,23 @@ public class OverviewStatistics extends
 		}
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final GridCoverage entry,
+			final GeoWaveRow... geoWaveRows ) {
+		if (entry instanceof FitToIndexGridCoverage) {
+			final FitToIndexGridCoverage fitEntry = (FitToIndexGridCoverage) entry;
+			synchronized (this) {
+				resolutions = incorporateResolutions(
+						resolutions,
+						new Resolution[] {
+							fitEntry.getResolution()
+						});
+			}
+		}
+	}
+
 	private static Resolution[] incorporateResolutions(
 			final Resolution[] res1,
 			final Resolution[] res2 ) {

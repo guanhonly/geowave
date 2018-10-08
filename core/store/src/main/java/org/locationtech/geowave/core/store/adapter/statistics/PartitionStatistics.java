@@ -144,6 +144,17 @@ public class PartitionStatistics<T> extends
 		}
 	}
 
+	@Override
+	public void entryIngested(
+			boolean log,
+			final T entry,
+			final GeoWaveRow... kvs ) {
+		for (final GeoWaveRow kv : kvs) {
+			add(getPartitionKey(kv.getPartitionKey()));
+
+		}
+	}
+
 	protected static ByteArrayId getPartitionKey(
 			final byte[] partitionBytes ) {
 		return ((partitionBytes == null) || (partitionBytes.length == 0)) ? null : new ByteArrayId(

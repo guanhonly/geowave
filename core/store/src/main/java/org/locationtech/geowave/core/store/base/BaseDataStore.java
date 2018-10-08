@@ -840,5 +840,28 @@ public class BaseDataStore implements
 				}
 			}
 		}
+
+		@Override
+		public void entryIngested(
+				boolean log,
+				final T entry,
+				final GeoWaveRow... geowaveRows ) {
+			for (final GeoWaveRow geowaveRow : geowaveRows) {
+				final ByteArrayId dataId = adapter.getDataId(entry);
+				if ((dataId != null) && (dataId.getBytes() != null) && (dataId.getBytes().length > 0)) {
+					secondaryIndexDataStore.storeJoinEntry(
+							altIndexId,
+							dataId,
+							adapter.getAdapterId(),
+							EMPTY_FIELD_ID,
+							primaryIndexId,
+							new ByteArrayId(
+									geowaveRow.getPartitionKey()),
+							new ByteArrayId(
+									geowaveRow.getSortKey()),
+							EMPTY_VISIBILITY);
+				}
+			}
+		}
 	}
 }
