@@ -31,6 +31,8 @@ package org.locationtech.geowave.core.store.adapter.statistics.histogram;
 import java.nio.ByteBuffer;
 
 import org.locationtech.geowave.core.index.FloatCompareUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * * Fixed number of bins for a histogram. Unless configured, the range will
@@ -47,6 +49,7 @@ import org.locationtech.geowave.core.index.FloatCompareUtils;
 public class FixedBinNumericHistogram implements
 		NumericHistogram
 {
+	private final static Logger LOGGER = LoggerFactory.getLogger(FixedBinNumericHistogram.class);
 
 	private long count[] = new long[32];
 	private long totalCount = 0;
@@ -311,6 +314,78 @@ public class FixedBinNumericHistogram implements
 			final int bin = Math.min(
 					(int) Math.floor(b),
 					count.length - 1);
+			count[bin] += amount;
+		}
+
+		totalCount += amount;
+	}
+
+	public void add2(
+			final long amount,
+			final double num ) {
+
+		LOGGER.warn("amount is " + amount + " number is " + num);
+		LOGGER.warn("range is " + constrainedRange + " min|max " + minValue + " " + maxValue);
+
+		if (constrainedRange && ((num < minValue) || (num > maxValue))) {
+			LOGGER.warn("returning from add");
+			return;
+		}
+		// entry of the the same value or first entry
+		if ((totalCount == 0L) || FloatCompareUtils.checkDoublesEqual(
+				minValue,
+				num)) {
+			LOGGER.warn("entry of the the same value or first entry...");
+			count[0] += amount;
+			minValue = num;
+			maxValue = Math.max(
+					num,
+					maxValue);
+		} // else if entry has a different value
+		else if (FloatCompareUtils.checkDoublesEqual(
+				maxValue,
+				minValue)) { // &&
+								// num
+								// is
+			// neither
+			LOGGER.warn("entry has a different value...");
+			if (num < minValue) {
+				count[count.length - 1] = count[0];
+				count[0] = amount;
+				minValue = num;
+
+			}
+			else if (num > maxValue) {
+				count[count.length - 1] = amount;
+				// count[0] is unchanged
+				maxValue = num;
+			}
+		}
+		else {
+
+			if (num < minValue) {
+				LOGGER.warn("redistributing max Val..");
+				redistribute(
+						num,
+						maxValue);
+				minValue = num;
+
+			}
+			else if (num > maxValue) {
+				LOGGER.warn("redistributing min Val..");
+				redistribute(
+						minValue,
+						num);
+				maxValue = num;
+			}
+			final double range = maxValue - minValue;
+			LOGGER.warn("redistribution range is " + range);
+			LOGGER.warn("count length is " + count.length);
+			final double b = (((num - minValue) / range) * count.length);
+			final int bin = Math.min(
+					(int) Math.floor(b),
+					count.length - 1);
+			LOGGER.warn("bin num is " + bin);
 			count[bin] += amount;
 		}
 

@@ -15,9 +15,12 @@ import java.util.Date;
 
 import org.locationtech.geowave.core.index.ByteArrayId;
 import org.locationtech.geowave.core.store.adapter.statistics.DataStatistics;
+import org.locationtech.geowave.core.store.adapter.statistics.DataStatisticsBuilder;
 import org.locationtech.geowave.core.store.adapter.statistics.FixedBinNumericStatistics;
 import org.locationtech.geowave.core.store.entities.GeoWaveRow;
 import org.opengis.feature.simple.SimpleFeature;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -41,6 +44,7 @@ public class FeatureFixedBinNumericStatistics extends
 		FeatureStatistic
 {
 
+	private final static Logger LOGGER = LoggerFactory.getLogger(FeatureFixedBinNumericStatistics.class);
 	public static final ByteArrayId STATS_TYPE = new ByteArrayId(
 			"FEATURE_FIXED_BIN_NUMERIC_HISTOGRAM");
 
@@ -137,17 +141,19 @@ public class FeatureFixedBinNumericStatistics extends
 			boolean log,
 			final SimpleFeature entry,
 			final GeoWaveRow... rows ) {
+		LOGGER.warn("getting attribute: " + getFieldName());
 		final Object o = entry.getAttribute(getFieldName());
 		if (o == null) {
+			LOGGER.warn("object is null");
 			return;
 		}
 		if (o instanceof Date) {
-			add(
+			add2(
 					1,
 					((Date) o).getTime());
 		}
 		else if (o instanceof Number) {
-			add(
+			add2(
 					1,
 					((Number) o).doubleValue());
 		}

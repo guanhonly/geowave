@@ -154,6 +154,14 @@ public abstract class FixedBinNumericStatistics<T> extends
 				num);
 	}
 
+	protected void add2(
+			final long amount,
+			final double num ) {
+		this.histogram.add2(
+				amount,
+				num);
+	}
+
 	public abstract String getFieldIdentifier();
 
 	@Override
