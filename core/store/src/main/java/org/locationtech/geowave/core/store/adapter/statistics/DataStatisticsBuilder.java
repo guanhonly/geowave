@@ -104,6 +104,7 @@ public class DataStatisticsBuilder<T> implements
 		}
 		LOGGER.warn("calling entry ingest for stat");
 		statistics.entryIngested(
+				log,
 				entry,
 				kvs);
 		LOGGER.warn("entry ingest for complete");
