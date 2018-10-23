@@ -183,10 +183,18 @@ public class BaseDataStore implements
 	public <T> CloseableIterator<T> query(
 			final QueryOptions queryOptions,
 			final Query query ) {
+		return query(queryOptions, query, true);
+	}
+	
+	@Override
+	public <T> CloseableIterator<T> query(
+			final QueryOptions queryOptions,
+			final Query query,
+			boolean filterDuplicates) {
 		return internalQuery(
 				queryOptions,
 				query,
-				false);
+				false, filterDuplicates);
 	}
 
 	/*
@@ -201,6 +209,177 @@ public class BaseDataStore implements
 	 * org.locationtech.geowave.core.store.query.Query)
 	 */
 	protected <T> CloseableIterator<T> internalQuery(
+			final QueryOptions queryOptions,
+			final Query query,
+			final boolean delete,
+			final boolean filterDuplicates) {
+		final List<CloseableIterator<Object>> results = new ArrayList<CloseableIterator<Object>>();
+		// all queries will use the same instance of the dedupe filter for
+		// client side filtering because the filter needs to be applied across
+		// indices
+		final BaseQueryOptions sanitizedQueryOptions = new BaseQueryOptions(
+				(queryOptions == null) ? new QueryOptions() : queryOptions,
+				internalAdapterStore);
+
+		// If CQL filter is set
+		if (query instanceof AdapterQuery) {
+			final ByteArrayId CQlAdapterId = ((AdapterQuery) query).getAdapterId();
+
+			if ((sanitizedQueryOptions.getAdapterIds() == null) || (sanitizedQueryOptions.getAdapterIds().isEmpty())) {
+				sanitizedQueryOptions.setInternalAdapterId(internalAdapterStore.getInternalAdapterId(CQlAdapterId));
+			}
+			else if (sanitizedQueryOptions.getAdapterIds().size() == 1) {
+				if (!sanitizedQueryOptions.getAdapterIds().iterator().next().equals(
+						internalAdapterStore.getInternalAdapterId(CQlAdapterId))) {
+					LOGGER.error("CQL Query AdapterID does not match Query Options AdapterId");
+					throw new RuntimeException(
+							"CQL Query AdapterID does not match Query Options AdapterId");
+				}
+			}
+			else {
+				// Throw exception when QueryOptions has more than one adapter
+				// and CQL Adapter is set.
+				LOGGER.error("CQL Query AdapterID does not match Query Options AdapterId");
+				throw new RuntimeException(
+						"CQL Query AdapterID does not match Query Options AdapterId");
+			}
+
+		}
+
+		final Query sanitizedQuery = (query == null) ? new EverythingQuery() : query;
+
+		final DedupeFilter filter = new DedupeFilter();
+		MemoryPersistentAdapterStore tempAdapterStore;
+		final List<DataStoreCallbackManager> deleteCallbacks = new ArrayList<>();
+
+		try {
+			tempAdapterStore = new MemoryPersistentAdapterStore(
+					sanitizedQueryOptions.getAdaptersArray(adapterStore));
+			// keep a list of adapters that have been queried, to only load an
+			// adapter to be queried once
+			final Set<Short> queriedAdapters = new HashSet<Short>();
+			final List<Pair<PrimaryIndex, List<InternalDataAdapter<?>>>> indexAdapterPairList = delete ? sanitizedQueryOptions
+					.getIndicesForAdapters(
+							tempAdapterStore,
+							indexMappingStore,
+							indexStore) : sanitizedQueryOptions.getAdaptersWithMinimalSetOfIndices(
+					tempAdapterStore,
+					indexMappingStore,
+					indexStore);
+			for (Pair<PrimaryIndex, List<InternalDataAdapter<?>>> indexAdapterPair : indexAdapterPairList) {
+				final List<Short> adapterIdsToQuery = new ArrayList<>();
+				// this only needs to be done once per index, not once per
+				// adapter
+				boolean queriedAllAdaptersByPrefix = false;
+				for (final InternalDataAdapter adapter : indexAdapterPair.getRight()) {
+					if (delete) {
+						final DataStoreCallbackManager callbackCache = new DataStoreCallbackManager(
+								statisticsStore,
+								secondaryIndexDataStore,
+								queriedAdapters.add(adapter.getInternalAdapterId()));
+						callbackCache.setPersistStats(baseOptions.isPersistDataStatistics());
+						deleteCallbacks.add(callbackCache);
+						final ScanCallback callback = sanitizedQueryOptions.getScanCallback();
+
+						final PrimaryIndex index = indexAdapterPair.getLeft();
+						sanitizedQueryOptions.setScanCallback(new ScanCallback<Object, GeoWaveRow>() {
+
+							@Override
+							public void entryScanned(
+									final Object entry,
+									final GeoWaveRow row ) {
+								if (callback != null) {
+									callback.entryScanned(
+											entry,
+											row);
+								}
+								callbackCache.getDeleteCallback(
+										adapter,
+										index).entryDeleted(
+										entry,
+										row);
+							}
+						});
+					}
+					if (sanitizedQuery instanceof InsertionIdQuery) {
+						sanitizedQueryOptions.setLimit(-1);
+						results.add(queryInsertionId(
+								adapter,
+								indexAdapterPair.getLeft(),
+								(InsertionIdQuery) sanitizedQuery,
+								filter,
+								sanitizedQueryOptions,
+								tempAdapterStore,
+								delete));
+						continue;
+					}
+					else if (sanitizedQuery instanceof PrefixIdQuery) {
+						if (!queriedAllAdaptersByPrefix) {
+							final PrefixIdQuery prefixIdQuery = (PrefixIdQuery) sanitizedQuery;
+							results.add(queryRowPrefix(
+									indexAdapterPair.getLeft(),
+									prefixIdQuery.getPartitionKey(),
+									prefixIdQuery.getSortKeyPrefix(),
+									sanitizedQueryOptions,
+									indexAdapterPair.getRight(),
+									tempAdapterStore,
+									delete));
+							queriedAllAdaptersByPrefix = true;
+						}
+						continue;
+					}
+					adapterIdsToQuery.add(adapter.getInternalAdapterId());
+				}
+				// supports querying multiple adapters in a single index
+				// in one query instance (one scanner) for efficiency
+				if (adapterIdsToQuery.size() > 0) {
+					results.add(queryConstraints(
+							adapterIdsToQuery,
+							indexAdapterPair.getLeft(),
+							sanitizedQuery,
+							filter,
+							sanitizedQueryOptions,
+							tempAdapterStore,
+							delete));
+				}
+			}
+
+		}
+		catch (final IOException e1) {
+			LOGGER.error(
+					"Failed to resolve adapter or index for query",
+					e1);
+		}
+		return new CloseableIteratorWrapper<T>(
+				new Closeable() {
+					@Override
+					public void close()
+							throws IOException {
+						for (final CloseableIterator<Object> result : results) {
+							result.close();
+						}
+						for (final DataStoreCallbackManager c : deleteCallbacks) {
+							c.close();
+						}
+					}
+				},
+				Iterators.concat(new CastIterator<T>(
+						results.iterator())));
+	}
+
+	/*
+	 * Since this general-purpose method crosses multiple adapters, the type of
+	 * result cannot be assumed.
+	 * 
+	 * (non-Javadoc)
+	 * 
+	 * @see
+	 * org.locationtech.geowave.core.store.DataStore#query(org.locationtech.
+	 * geowave. core.store.query.QueryOptions,
+	 * org.locationtech.geowave.core.store.query.Query)
+	 */
+
+	public <T> CloseableIterator<T> internalQuery2(
 			final QueryOptions queryOptions,
 			final Query query,
 			final boolean delete ) {
@@ -239,7 +418,7 @@ public class BaseDataStore implements
 
 		final Query sanitizedQuery = (query == null) ? new EverythingQuery() : query;
 
-		final DedupeFilter filter = new DedupeFilter();
+		final DedupeFilter filter = null;
 		MemoryPersistentAdapterStore tempAdapterStore;
 		final List<DataStoreCallbackManager> deleteCallbacks = new ArrayList<>();
 
@@ -406,6 +585,7 @@ public class BaseDataStore implements
 			try (CloseableIterator<?> dataIt = internalQuery(
 					queryOptions,
 					query,
+					true,
 					true)) {
 				while (dataIt.hasNext()) {
 					dataIt.next();

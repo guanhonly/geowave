@@ -50,7 +50,7 @@ public interface DataStore
 	 * 
 	 * @param queryOptions
 	 *            additional options for the processing the query
-	 * @param the
+	 * @param query
 	 *            data constraints for the query
 	 * @return An iterator on all results that match the query. The iterator
 	 *         implements Closeable and it is best practice to close the
@@ -59,8 +59,32 @@ public interface DataStore
 	public <T> CloseableIterator<T> query(
 			final QueryOptions queryOptions,
 			final Query query );
+	
+	/**
+	 * Returns all data in this data store that matches the query parameter
+	 * within the index described within the QueryOptions. If by the index
+	 * passed in and matches the adapter (the same adapter ID as the ID
+	 * ingested). All data that matches the query, adapter ID, and is in the
+	 * index ID will be returned as an instance of the native data type that
+	 * this adapter supports. The iterator will only return as many results as
+	 * the limit passed in.
+	 * 
+	 * @param queryOptions
+	 *            additional options for the processing the query
+	 * @param query
+	 *            data constraints for the query
+     * @param filterDuplicates
+	 *            set to true to filter duplicate entries from query
+	 * @return An iterator on all results that match the query. The iterator
+	 *         implements Closeable and it is best practice to close the
+	 *         iterator after it is no longer needed.
+	 */
+	public <T> CloseableIterator<T> query(
+			final QueryOptions queryOptions,
+			final Query query,
+			boolean filterDuplicates);
 
-/**
+	/**
 	 * Delete all data in this data store that matches the query parameter
 	 * within the index described by the index passed in and matches the adapter
 	 * (the same adapter ID as the ID ingested). All data that matches the
