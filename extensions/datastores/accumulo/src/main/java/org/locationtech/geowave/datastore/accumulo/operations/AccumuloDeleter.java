@@ -1,9 +1,18 @@
 package org.locationtech.geowave.datastore.accumulo.operations;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
 import org.apache.accumulo.core.client.BatchDeleter;
 import org.locationtech.geowave.core.store.entities.GeoWaveRow;
 import org.locationtech.geowave.core.store.entities.GeoWaveRowIteratorTransformer;
 import org.locationtech.geowave.core.store.operations.Deleter;
+import org.locationtech.geowave.core.store.operations.QueryAndDeleteByRow;
+import org.locationtech.geowave.core.store.operations.ReaderParams;
+import org.locationtech.geowave.core.store.operations.RowDeleter;
+import org.locationtech.geowave.core.index.ByteArrayId;
 
 public class AccumuloDeleter<T> extends
 		AccumuloReader<T> implements
@@ -14,10 +23,11 @@ public class AccumuloDeleter<T> extends
 	// .getLogger(
 	// AccumuloDeleter.class);
 
-	// private Map<ByteArrayId, Short> idMap;
-	// private Map<ByteArrayId, Integer> dupCountMap;
-	// private AccumuloOperations operations;
-	// private ReaderParams<T> readerParams;
+	private Map<ByteArrayId, Short> idMap;
+	private List<GeoWaveRow> dupRowList;
+	private Map<ByteArrayId, Integer> dupCountMap;
+	private AccumuloOperations operations;
+	private ReaderParams<T> readerParams;
 
 	private boolean closed = false;
 
@@ -27,9 +37,9 @@ public class AccumuloDeleter<T> extends
 			final int partitionKeyLength,
 			final boolean wholeRowEncoding,
 			final boolean clientSideRowMerging,
-			final boolean parallel ) {
-		// AccumuloOperations operations,
-		// ReaderParams<T> readerParams ) {
+			final boolean parallel,
+			AccumuloOperations operations,
+			ReaderParams<T> readerParams ) {
 		super(
 				scanner,
 				transformer,
@@ -37,10 +47,11 @@ public class AccumuloDeleter<T> extends
 				wholeRowEncoding,
 				clientSideRowMerging,
 				parallel);
-		// idMap = new HashMap<>();
-		// dupCountMap = new HashMap<>();
-		// this.operations = operations;
-		// this.readerParams = readerParams;
+		idMap = new HashMap<>();
+		dupCountMap = new HashMap<>();
+		dupRowList = new ArrayList<>();
+		this.operations = operations;
+		this.readerParams = readerParams;
 	}
 
 	@Override
@@ -52,7 +63,9 @@ public class AccumuloDeleter<T> extends
 
 			closed = true;
 		}
+
 		super.close();
+
 		// We should add an IT that has a time range that crosses dec-january
 		// and then delete by time with just dec or just january to fail this
 
@@ -116,94 +129,43 @@ public class AccumuloDeleter<T> extends
 
 	}
 
-	// protected int getCount(
-	// final List<Pair<PrimaryIndex, List<DataAdapter<Object>>>>
-	// indexAdapterPairs,
-	// final QueryOptions sanitizedQueryOptions,
-	// final Query sanitizedQuery ) {
-	// int count = 0;
-	//
-	// for (final Pair<PrimaryIndex, List<DataAdapter<Object>>> indexAdapterPair
-	// : indexAdapterPairs) {
-	// for (final DataAdapter dataAdapter : indexAdapterPair.getRight()) {
-	// final QueryOptions countOptions = new QueryOptions(
-	// sanitizedQueryOptions);
-	// countOptions
-	// .setAggregation(
-	// new CountAggregation(),
-	// dataAdapter);
-	//
-	// try (final CloseableIterator<Object> it = query(
-	// countOptions,
-	// sanitizedQuery)) {
-	// while (it.hasNext()) {
-	// if (countAggregation) {
-	// final CountResult result = ((CountResult) (it.next()));
-	// if (result != null) {
-	// count += result.getCount();
-	// }
-	// }
-	// else {
-	// it.next();
-	// count++;
-	// }
-	// }
-	//
-	// it.close();
-	// }
-	// catch (final Exception e) {
-	// LOGGER
-	// .warn(
-	// "Error running count aggregation",
-	// e);
-	// return count;
-	// }
-	// }
-	// }
-	//
-	// return count;
-	// }
-
 	@Override
 	public void entryScanned(
 			final T entry,
 			final GeoWaveRow row ) {
-		// final int rowDups = row.getNumberOfDuplicates();
-		//
-		// if (rowDups > 0) {
-		// final ByteArrayId dataId = new ByteArrayId(
-		// row.getDataId());
-		// if (idMap
-		// .get(
-		// dataId) == null) {
-		// idMap
-		// .put(
-		// dataId,
-		// row.getInternalAdapterId());
-		// }
-		//
-		// final Integer mapDups = dupCountMap
-		// .get(
-		// dataId);
-		//
-		// if (mapDups == null) {
-		// dupCountMap
-		// .put(
-		// dataId,
-		// rowDups);
-		// }
-		// else if (mapDups == 1) {
-		// dupCountMap
-		// .remove(
-		// dataId);
-		// }
-		// else {
-		// dupCountMap
-		// .put(
-		// dataId,
-		// mapDups - 1);
-		// }
-		// }
+		final int rowDups = row.getNumberOfDuplicates();
 
+		if (rowDups > 0) {
+			dupRowList.add(row);
+			final ByteArrayId dataId = new ByteArrayId(
+					row.getDataId());
+			if (idMap.get(dataId) == null) {
+				idMap.put(
+						dataId,
+						row.getInternalAdapterId());
+			}
+
+			final Integer mapDups = dupCountMap.get(dataId);
+
+			if (mapDups == null) {
+				dupCountMap.put(
+						dataId,
+						rowDups);
+			}
+			else if (mapDups == 1) {
+				dupCountMap.remove(dataId);
+			}
+			else {
+				dupCountMap.put(
+						dataId,
+						mapDups - 1);
+			}
+		}
+
+	}
+
+	@Override
+	public Map<ByteArrayId, Integer> getDuplicateCountMap() {
+		return dupCountMap;
 	}
 }
